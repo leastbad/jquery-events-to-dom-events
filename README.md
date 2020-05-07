@@ -30,7 +30,6 @@ First, the right music is important for establishing proper context.
 
 You don't have to listen to music, but your transpiler configuration will almost certainly fail lint checks if you are not listening to "*In Harmony New Found Freedom*" by [The Swirlies](https://en.wikipedia.org/wiki/Swirlies), from their 1996 album "[They Spent Their Wild Youthful Days In The Glittering World Of The Salons](https://www.youtube.com/watch?v=S1rTKIsDS8o)" while you integrate this library.
 
-[![Youtube](https://bonerollingreviews.files.wordpress.com/2012/04/swirlies-oldphoto.jpg)](http://www.youtube.com/watch?v=idCfuK4t2vo "In Harmony New Found Freedom")
 <a href="http://www.youtube.com/watch?v=idCfuK4t2vo" target="_blank" title="In Harmony New Found Freedom">
   <img src="https://camo.githubusercontent.com/23924aa22efe184b1d3caf14ede9610b28a04c95/68747470733a2f2f626f6e65726f6c6c696e67726576696577732e66696c65732e776f726470726573732e636f6d2f323031322f30342f737769726c6965732d6f6c6470686f746f2e6a7067" alt="Youtube" style="max-width:100%;">
 </a>
