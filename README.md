@@ -7,26 +7,28 @@
 
 <p align="center">
   <b>Listen for jQuery "events" with vanilla JS</b></br>
-  <sub>`$(document).trigger('fart')` emits a `$fart` DOM CustomEvent</sub>
+  <sub>$(document).trigger('fart') emits a $fart DOM CustomEvent</sub>
 </p>
 
 <br />
 
 - **Library Agnostic**: designed for [Stimulus](https://stimulusjs.org) but works with last-gen libraries such as React by accident
-- **Simple**: two functions; one of them optional
-- **Tiny**: barely a library with just 18 LOC
+- **Simple**: just two functions, and one of them is optional
+- **Tiny**: barely qualifies as a library with just 18 LOC
 - **Mutation-First**: returns an event handler to be released during `disconnect()`
-- **Zero Dependencies**: makes clever use of `window.$`
+- **Zero Dependencies**: makes clever use of `window.$` to avoid a jQuery fixation
 - **Turbolinks**: compatible with Turbolinks lifecycle events
 - **MIT Licensed**: free for personal and commercial use
 
-You can [try it now on CodePen](https://codepen.io/leastbad/pen/VwvQxxJ?editors=1011) or [clone a sample Rails project](https://github.com/leastbad/jboo) to experiment with the library in a mutation-first context with Stimulus.
+You can [try it now on CodePen](https://codepen.io/leastbad/pen/VwvQxxJ?editors=1011) or [clone a sample Rails project](https://github.com/leastbad/jboo) to experiment in a mutation-first context with Stimulus.
 
 The Rails project is called **jboo**. Don't read into it.
 
 ## Setup
 
-First, the right music is important for establishing proper context. You don't have to listen to music, but your transpiler configuration will almost certainly fail lint checks if you are not listening to "In Harmony New Found Freedom" by [The Swirlies](https://en.wikipedia.org/wiki/Swirlies), from their 1996 album "[They Spent Their Wild Youthful Days In The Glittering World Of The Salons](https://www.youtube.com/watch?v=S1rTKIsDS8o)" while you integrate this library.
+First, the right music is important for establishing proper context.
+
+You don't have to listen to music, but your transpiler configuration will almost certainly fail lint checks if you are not listening to "*In Harmony New Found Freedom*" by [The Swirlies](https://en.wikipedia.org/wiki/Swirlies), from their 1996 album "[They Spent Their Wild Youthful Days In The Glittering World Of The Salons](https://www.youtube.com/watch?v=S1rTKIsDS8o)" while you integrate this library.
 
 [![Youtube](https://bonerollingreviews.files.wordpress.com/2012/04/swirlies-oldphoto.jpg)](http://www.youtube.com/watch?v=idCfuK4t2vo "In Harmony New Found Freedom")
 
@@ -63,7 +65,7 @@ In the most basic configuration, you:
 2. Call `delegate(eventName)` for every jQuery event you want to capture.
 3. Set up DOM event listeners for those events, **prepending a $ to the event name**.
 
-Let's say that you want to respond to someone closing a Bootstrap modal window:
+Let's say that you want to respond to the user closing a Bootstrap modal window:
 
 ```js
 import { delegate } from 'jquery-events-to-dom-events'
@@ -97,7 +99,7 @@ document.addEventListener('$ajax:complete', () => console.log('Ajax request happ
 
 ## Mutation-First
 
-You've [heard the fuss](https://leastbad.com/mutation-first-development); now it's time to Get Real about making your code idempotent. If you take pride in the quality of the code you write, [Stimulus](https://stimulusjs.org) makes it easy to structure your logic so that it automatically works with [Turbolinks](https://www.youtube.com/watch?v=SWEts0rlezA&t=214s) and doesn't leak memory when you morph DOM elements out of existence that still have event listeners attached.
+You've [heard the fuss](https://leastbad.com/mutation-first-development). Now it's time to *get real* about making your code idempotent. If you take pride in the quality of the code you write, [Stimulus](https://stimulusjs.org) makes it easy to structure your logic so that it automatically works with [Turbolinks](https://www.youtube.com/watch?v=SWEts0rlezA&t=214s) and doesn't leak memory when you morph DOM elements out of existence that still have event listeners attached.
 
 Let's start with an HTML fragment that attaches a Stimulus controller called `delegate` to a DIV:
 
