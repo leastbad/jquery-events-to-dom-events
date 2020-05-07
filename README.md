@@ -6,130 +6,137 @@
 </p>
 
 <p align="center">
-  <b>Respond to jQuery "events" with DOM event handlers</b></br>
-  <sub>Barely a library with just 18 LOC </sub>
+  <b>Listen for jQuery "events" with vanilla JS</b></br>
+  <sub>`$(document).trigger('fart')` emits a `$fart` DOM CustomEvent</sub>
 </p>
 
 <br />
 
-- **Library Agnostic**: designed for [Stimulus](https://stimulusjs.org) but should works with previous-generation libraries such as React, Angular and Vue by accident
-- **Simple**: two functions, one of them optional
+- **Library Agnostic**: designed for [Stimulus](https://stimulusjs.org) but works with last-gen libraries such as React by accident
+- **Simple**: two functions; one of them optional
+- **Tiny**: barely a library with just 18 LOC
 - **Mutation-First**: returns an event handler to be released during `disconnect()`
 - **Zero Dependencies**: makes clever use of `window.$`
 - **Turbolinks**: compatible with Turbolinks lifecycle events
 - **MIT Licensed**: free for personal and commercial use
 
-## Built for StimulusJS
+You can [try it now on CodePen](https://codepen.io/leastbad/pen/VwvQxxJ?editors=1011) or [clone a sample Rails project](https://github.com/leastbad/jboo) to experiment with the library in a mutation-first context with Stimulus.
 
-This [Stimulus](https://stimulusjs.org/) controller allows you to make any configurations for the image grid directly with data attributes in your HTML. Once registered in your Stimulus application, you can use it anywhere you like.
-
-Here is a simple example:
-
-```html
-<div data-controller="image-grid">
-  <img src="https://placehold.it/350x300/EEE04A/ffffff">
-  <img src="https://placehold.it/420x320/5cb85c/ffffff">
-  <img src="https://placehold.it/320x380/5bc0de/ffffff">
-  <img src="https://placehold.it/472x500/f0ad4e/ffffff">
-  <img src="https://placehold.it/540x360/FF3167/ffffff">
-</div>
-```
-<tiny>Yes, that's really it.</tiny>
-
-### Credit where credit is due
-
-I don't know who wrote the original image-grid.js library. It shipped with a bunch of premium Bootstrap themes, but it relied on jQuery. While stimulus-image-grid is an improvement on the original in several significant ways, the actual meat and potatoes of the algorithm is 100% adapted from the code of a stranger. If you know who wrote [image-grid.js](https://github.com/Pactum/pactum.io/blob/9f2d162bc21f26d62c5d4ba801309bdeb8b9fa9e/v4/js/custom/image-grid.js), please let me know!
+The Rails project is called **jboo**. Don't read into it.
 
 ## Setup
 
-Note: **stimulus-image-grid requires StimulusJS v2.0+**
+First, the right music is important for establishing proper context. You don't have to listen to music, but your transpiler configuration will almost certainly fail lint checks if you are not listening to "In Harmony New Found Freedom" by [The Swirlies](https://en.wikipedia.org/wiki/Swirlies), from their 1996 album "[They Spent Their Wild Youthful Days In The Glittering World Of The Salons](https://www.youtube.com/watch?v=S1rTKIsDS8o)" while you integrate this library.
 
-*If you are reading this in the past* (Stimulus 2 isn't out yet) you can change your `stimulus` package in `package.json` to point to [this commit](https://github.com/stimulusjs/dev-builds/archive/b8cc8c4/stimulus.tar.gz).
+[![Youtube](https://bonerollingreviews.files.wordpress.com/2012/04/swirlies-oldphoto.jpg)](http://www.youtube.com/watch?v=idCfuK4t2vo "In Harmony New Found Freedom")
 
-Add image-grid to your main JS entry point or Stimulus controllers root folder:
+Next, make sure that you've loaded jQuery and this library into your project.
+
+`yarn install jquery jquery-events-to-dom-events`
+
+This library assumes that jQuery is available as `$` on the global `window` object. You can verify this by opening your browser's Console Inspector and typing `window.$`. You should see something like:
+
+`ƒ jQuery(selector, context)`
+
+If you are working in [Rails](https://rubyonrails.org) and `$` is not available, try modifying your `config/webpack/environment.js` like this:
 
 ```js
-import { Application } from 'stimulus'
-import ImageGrid from 'stimulus-image-grid'
+const { environment } = require('@rails/webpacker')
 
-import { definitionsFromContext } from 'stimulus/webpack-helpers'
-const application = Application.start()
-const context = require.context('../controllers', true, /\.js$/)
-application.load(definitionsFromContext(context))
+const webpack = require('webpack')
+environment.plugins.prepend(
+  'Provide',
+  new webpack.ProvidePlugin({
+    $: 'jquery/src/jquery',
+    jQuery: 'jquery/src/jquery'
+  })
+)
 
-// Manually register ImageGrid as a Stimulus controller
-application.register('image-grid', ImageGrid)
+module.exports = environment
 ```
 
-## HTML Markup
+## Usage
 
-For the image grid to work properly, it needs the raw image dimensions. If you know the dimensions at render time, set the `data-width` and `data-height` attributes. Otherwise, the library will calculate the size when it loads. This is slower and could cause a flicker, but it will only happen once - even across Turbolinks visits.
+In the most basic configuration, you:
+
+1. `import { delegate } from 'jquery-events-to-dom-events'`
+2. Call `delegate(eventName)` for every jQuery event you want to capture.
+3. Set up DOM event listeners for those events, **prepending a $ to the event name**.
+
+Let's say that you want to respond to someone closing a Bootstrap modal window:
+
+```js
+import { delegate } from 'jquery-events-to-dom-events'
+delegate('hidden.bs.modal')
+document.addEventListener('$hidden.bs.modal', () => console.log('Modal closed!'))
+```
+
+That might be it. Go make a sandwich - you've earned it.
+
+### Ajax and the case of the additional parameters
+
+Some events - the [jQuery Ajax](https://api.jquery.com/jquery.ajax/) callback events in particular - return with additional parameters attached, and for these exceptions you need to specify a second parameter defining an array of strings representing these parameters. **The first parameter must always be `event`.**
+
+Event | Parameters
+----- | ----------
+ajax:success | ['event', 'data', 'status', 'xhr']
+ajax:error | ['event', 'xhr', 'status', 'error']
+ajax:complete | ['event', 'xhr', 'status']
+ajax:beforeSend | ['event', 'xhr', 'settings']
+ajax:send | ['event', 'xhr']
+ajax:aborted:required | ['event', 'elements']
+ajax:aborted:file | ['event', 'elements']
+
+You can listen for notifications that Ajax requests have completed like so:
+
+```js
+import { delegate } from 'jquery-events-to-dom-events'
+delegate('ajax:complete', ['event', 'xhr', 'status'])
+document.addEventListener('$ajax:complete', () => console.log('Ajax request happened!'))
+```
+
+## Mutation-First
+
+You've [heard the fuss](https://leastbad.com/mutation-first-development); now it's time to Get Real about making your code idempotent. If you take pride in the quality of the code you write, [Stimulus](https://stimulusjs.org) makes it easy to structure your logic so that it automatically works with [Turbolinks](https://www.youtube.com/watch?v=SWEts0rlezA&t=214s) and doesn't leak memory when you morph DOM elements out of existence that still have event listeners attached.
+
+Let's start with an HTML fragment that attaches a Stimulus controller called `delegate` to a DIV:
 
 ```html
-<div data-controller="image-grid">
-  <img data-width="350" data-height="300" src="https://placehold.it/350x300/EEE04A/ffffff">
-  <img data-width="420" data-height="320" src="https://placehold.it/420x320/5cb85c/ffffff">
-  <img data-width="320" data-height="380" src="https://placehold.it/320x380/5bc0de/ffffff">
-  <img data-width="472" data-height="500" src="https://placehold.it/472x500/f0ad4e/ffffff">
-  <img data-width="540" data-height="360" src="https://placehold.it/540x360/FF3167/ffffff">
+<div data-controller="delegate">
+  <button data-action="delegate#triggerjQ">Trigger jQuery event</button>
 </div>
 ```
 
-The library tries really hard to not be opinionated about HTML structure. The basic idea is that every child of the container element that has the image-grid controller declared upon it will have [zero or one] image(s), somewhere in its DOM hierarchy. So for example, you could have a scenario where images are wrapped in DIV tags and it will find [zero or one] image(s) in the hierarchy:
+That Stimulus controller imports a second function called `abnegate` which releases your delegated events while your component teardown happens:
 
-```html
-<div data-controller="image-grid" class="col-md-6 col-lg-4 col-xl-3">
-  <div>
-    <img data-width="350" data-height="300" src="https://placehold.it/350x300/EEE04A/ffffff">
-  </div>
-  <div>
-    <img data-width="420" data-height="320" src="https://placehold.it/420x320/5cb85c/ffffff">
-  </div>
-  <div>
-    <img data-width="320" data-height="380" src="https://placehold.it/320x380/5bc0de/ffffff">
-  </div>
-  <div>
-    <img data-width="472" data-height="500" src="https://placehold.it/472x500/f0ad4e/ffffff">
-  </div>
-  <div>
-    <img data-width="540" data-height="360" src="https://placehold.it/540x360/FF3167/ffffff">
-  </div>
-</div>
+```js delegate_controller.js
+import { Controller } from 'stimulus'
+import { delegate, abnegate } from 'jquery-events-to-dom-events'
+
+const DOMEventHandler = () => console.log('$test event received from jQuery')
+
+export default class extends Controller {
+  connect () {
+    this.eventDelegate = delegate('test')
+    document.addEventListener('$test', DOMEventHandler)
+  }
+  disconnect () {
+    abnegate('test', this.eventDelegate)
+    document.removeEventListener('$test', DOMEventHandler)
+  }
+  triggerjQ () {
+    window.$(document).trigger('test')
+  }
+}
 ```
 
-This library is fully responsive in that it will automatically re-flow the images to the ideal layout in real-time as the container it lives in changes size. If you're using a CSS library such as Bootstrap, this is usually managed with the [responsive breakpoint classes](https://getbootstrap.com/docs/4.4/layout/grid/#grid-options).
+We use Stimulus to wire the click event of the button to call the `triggerjQ` method of the `delegate` controller. You can also call `$(document).trigger('test')` from your Console Inspector without clicking the button.
 
-## Optional Parameters
+The important takeaway is that the `delegate` function returns the jQuery event handler which can be stored as a property of the controller instance. This handler then gets passed back to the `abnegate` function so that jQuery can release it's own event listener on elements that might soon be removed from the DOM.
 
-There are only three configurable properties, all of which are set on the DOM element using data attributes:
+It's only by strictly adhering to good habits around attaching listeners during `connect()` and removing them during `disconnect()` that we can be confident we're releasing references properly. This convention helps us eliminate weird glitches and side-effects that come from blending legacy jQuery components with Turbolinks. They were written for a time when there was a single page load event, and clicks triggered page refresh operations.
 
-Property | Default Value
--------- | -------------
-padding | 10
-targetHeight | 150
-display | inline-block
-
-```html
-<div
-  data-controller="image-grid"
-  data-image-grid-padding-value="10"
-  data-image-grid-target-height-value="150"
-  data-image-grid-display-value="inline-block">
-  ...
-</div>
-```
-
-Padding is applied to the bottom of each image as well as the right edge of each image *that isn't the right-most image of its row*. Target height is applied to the row and you can tweak this value to suit the look of your application.
-
-### Obtaining a reference to the Stimulus controller instance
-
-When you place an image-grid controller on a DOM element, it hangs a variable on the element called `imageGrid` which allows you to access the internal state of the controller.
-
-The only method you should ever call directly is `processImages()`, which shouldn't be necessary but I'm not a fucking oracle so I've got your back. Here's an example of forcing a grid re-flow on an element with the id `grid`:
-
-```javascript
-document.getElementById('grid').imageGrid.processImages()
-```
+Remember: if you define event handlers with anonymous functions passed to a listener, you can't remove them later. Only you can prevent forest fires.
 
 ## Contributing
 
