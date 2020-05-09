@@ -111,7 +111,7 @@ Let's start with an HTML fragment that attaches a Stimulus controller called `de
 </div>
 ```
 
-That Stimulus controller imports a second function called `abnegate` which releases your delegated events while your component teardown happens:
+That Stimulus controller imports a second function called `abnegate`, which releases your delegated events while your component teardown happens:
 
 ```js delegate_controller.js
 import { Controller } from 'stimulus'
@@ -136,7 +136,7 @@ export default class extends Controller {
 
 We use Stimulus to wire the click event of the button to call the `triggerjQ` method of the `delegate` controller. You can also call `$(document).trigger('test')` from your Console Inspector without clicking the button.
 
-The important takeaway is that the `delegate` function returns the jQuery event handler which can be stored as a property of the controller instance. This handler then gets passed back to the `abnegate` function so that jQuery can release it's own event listener on elements that might soon be removed from the DOM.
+The important takeaway is that the `delegate` function returns the jQuery event handler, which can be stored as a property of the controller instance. This handler then gets passed back to the `abnegate` function so that jQuery can release its own event listener on elements that might soon be removed from the DOM.
 
 It's only by strictly adhering to good habits around attaching listeners during `connect()` and removing them during `disconnect()` that we can be confident we're releasing references properly. This convention helps us eliminate weird glitches and side-effects that come from blending legacy jQuery components with Turbolinks. They were written for a time when there was a single page load event, and clicks triggered page refresh operations.
 
