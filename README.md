@@ -80,7 +80,7 @@ That might be it. Go make a sandwich - you've earned it.
 
 **Note**: The mechanism this library uses is to capture jQuery events using jQuery event listeners, and then create DOM events that contain all of the same information as the original. **There is no way to actually catch jQuery events with a vanilla event handler** because the jQuery implementation is proprietary and non-trivial.
 
-Technically, this library repeats events. Quantum entanglement for events? Perfect! ship it.
+Technically, **this library *repeats* events**. Quantum entanglement for events? Perfect! Ship it.
 
 ### Ajax and the case of the additional parameters
 
@@ -109,8 +109,7 @@ You can pass parameters from your own jQuery events to DOM events. You just have
 ```js
 import { delegate } from 'jquery-events-to-dom-events'
 delegate('birthday', ['event', 'beast'])
-document.addEventListener('$birthday', event =>
-  console.log('birthday received as $birthday from DOM', event.detail.beast))
+document.addEventListener('$birthday', event => console.log('birthday received as $birthday from DOM', event.detail.beast))
 window.$(document).trigger('birthday', 666)
 ```
 
@@ -164,27 +163,10 @@ It's important to strike a balance between being opinionated and imposing ideolo
 To capture DOM events inside of your jQuery code, you essentially want to invert all previous instructions. The delegate and abnegate functions accept event names that start with a `$` character, and that tells the library to listen for DOM events and fire them as jQuery events.
 
 ```js dom_to_jquery_controller.js
-import { Controller } from 'stimulus'
-import { delegate, abnegate } from 'jquery-events-to-dom-events'
-
-const eventHandler = (event, detail) =>
-  console.log('$wedding received as wedding by jQuery', detail)
-
-export default class extends Controller {
-  connect () {
-    this.delegate = delegate('$wedding')
-    window.$(document).on('wedding', eventHandler)
-  }
-  disconnect () {
-    abnegate('$wedding', this.delegate)
-    window.$(document).off('wedding', eventHandler)
-  }
-  trigger () {
-    document.dispatchEvent(
-      new CustomEvent('$wedding', { detail: 666 })
-    )
-  }
-}
+import { delegate } from 'jquery-events-to-dom-events'
+const eventHandler = (event, detail) => console.log('$wedding received as wedding by jQuery', detail)
+this.delegate = delegate('$wedding')
+document.dispatchEvent(new CustomEvent('$wedding', { detail: 666 }))
 ```
 
 While the syntax is quite similar, there is a significant difference in the way events are passed into a jQuery event. The CustomEvent constructor can take an object as an optional second parameter, and the key in that object must be `detail`. Interestingly, the value of `detail` can be just about anything - such as *666* above - but most frequently, it's an object with key/value pairs in it.
