@@ -14,15 +14,16 @@
 
 - **Library Agnostic**: designed for [Stimulus](https://stimulusjs.org) but works with last-gen libraries such as React by accident
 - **Simple**: just two functions, and one of them is optional
-- **Tiny**: barely qualifies as a library with just 18 LOC
+- **Tiny**: barely qualifies as a library with just 30 LOC
 - **Mutation-First**: returns an event handler to be released during `disconnect()`
 - **Zero Dependencies**: makes clever use of `window.$` to avoid a jQuery fixation
 - **Turbolinks**: compatible with Turbolinks lifecycle events
+- **Bi-Directional**: quietly supports sending DOM events to jQuery, too
 - **MIT Licensed**: free for personal and commercial use
 
-You can [try it now on CodePen](https://codepen.io/leastbad/pen/VwvQxxJ?editors=1011) or [clone a sample Rails project](https://github.com/leastbad/jboo) to experiment in a mutation-first context with Stimulus.
+You can [try it now on CodePen](https://codepen.io/leastbad/pen/VwvQxxJ?editors=1011) or even better, [clone a sample Rails project](https://github.com/leastbad/jboo) to experiment in a mutation-first context with Stimulus.
 
-The Rails project is called **jboo**. Don't read into it.
+The Rails project is called **jboo**. Don't read into the name.
 
 ## Setup
 
@@ -77,9 +78,13 @@ document.addEventListener('$hidden.bs.modal', () => console.log('Modal closed!')
 
 That might be it. Go make a sandwich - you've earned it.
 
+**Note**: The mechanism this library uses is to capture jQuery events using jQuery event listeners, and then create DOM events that contain all of the same information as the original. **There is no way to actually catch jQuery events with a vanilla event handler** because the jQuery implementation is proprietary and non-trivial.
+
+Technically, this library repeats events. Quantum entanglement for events? Perfect! ship it.
+
 ### Ajax and the case of the additional parameters
 
-Some events - the [jQuery Ajax](https://api.jquery.com/jquery.ajax/) callback events in particular - return with additional parameters attached, and for these exceptions you need to specify a second parameter defining an array of strings representing these parameters. **The first parameter must always be `event`.**
+Some events, such as the [jQuery Ajax](https://api.jquery.com/jquery.ajax/) callbacks - return with additional parameters attached, and for these exceptions you need to specify a second parameter defining an array of strings representing these parameters. **The first element of this array must always be `event`.**
 
 Event | Parameters
 ----- | ----------
@@ -99,6 +104,16 @@ delegate('ajax:complete', ['event', 'xhr', 'status'])
 document.addEventListener('$ajax:complete', () => console.log('Ajax request happened!'))
 ```
 
+You can pass parameters from your own jQuery events to DOM events. You just have to give each parameter a name, and those parameters will be processed in order. Named parameters are accessible through the `detail` object of the event.
+
+```js
+import { delegate } from 'jquery-events-to-dom-events'
+delegate('birthday', ['event', 'beast'])
+document.addEventListener('$birthday', event =>
+  console.log('birthday received as $birthday from DOM', event.detail.beast))
+window.$(document).trigger('birthday', 666)
+```
+
 ## Mutation-First
 
 You've [heard the fuss](https://leastbad.com/mutation-first-development). Now it's time to *get real* about making your code idempotent. If you take pride in the quality of the code you write, [Stimulus](https://stimulusjs.org) makes it easy to structure your logic so that it automatically works with [Turbolinks](https://www.youtube.com/watch?v=SWEts0rlezA&t=214s) and doesn't leak memory when you morph DOM elements out of existence that still have event listeners attached.
@@ -106,30 +121,30 @@ You've [heard the fuss](https://leastbad.com/mutation-first-development). Now it
 Let's start with an HTML fragment that attaches a Stimulus controller called `delegate` to a DIV:
 
 ```html
-<div data-controller="delegate">
-  <button data-action="delegate#triggerjQ">Trigger jQuery event</button>
+<div data-controller="jquery-to-dom">
+  <button data-action="jquery-to-dom#trigger">Trigger jQuery event</button>
 </div>
 ```
 
 That Stimulus controller imports a second function called `abnegate`, which releases your delegated events while your component teardown happens:
 
-```js delegate_controller.js
+```js jquery_to_dom_controller.js
 import { Controller } from 'stimulus'
 import { delegate, abnegate } from 'jquery-events-to-dom-events'
 
-const DOMEventHandler = () => console.log('$test event received from jQuery')
+const eventHandler = () => console.log('jquery received as $jquery from DOM')
 
 export default class extends Controller {
   connect () {
-    this.eventDelegate = delegate('test')
-    document.addEventListener('$test', DOMEventHandler)
+    this.delegate = delegate('jquery')
+    document.addEventListener('$jquery', eventHandler)
   }
   disconnect () {
-    abnegate('test', this.eventDelegate)
-    document.removeEventListener('$test', DOMEventHandler)
+    abnegate('jquery', this.delegate)
+    document.removeEventListener('$jquery', eventHandler)
   }
-  triggerjQ () {
-    window.$(document).trigger('test')
+  trigger () {
+    window.$(document).trigger('jquery')
   }
 }
 ```
@@ -141,6 +156,38 @@ The important takeaway is that the `delegate` function returns the jQuery event 
 It's only by strictly adhering to good habits around attaching listeners during `connect()` and removing them during `disconnect()` that we can be confident we're releasing references properly. This convention helps us eliminate weird glitches and side-effects that come from blending legacy jQuery components with Turbolinks. They were written for a time when there was a single page load event, and clicks triggered page refresh operations.
 
 Remember: if you define event handlers with anonymous functions passed to a listener, you can't remove them later. Only you can prevent forest fires.
+
+## Sending DOM events to jQuery
+
+It's important to strike a balance between being opinionated and imposing ideological limitations. While this library is definitely intended to act as a bridge to help jQuery developers move to using vanilla JS, at some point I realized that if I don't make it easy to send DOM events *into* jQuery as well, people will choose a library that does.
+
+To capture DOM events inside of your jQuery code, you essentially want to invert all previous instructions. The delegate and abnegate functions accept event names that start with a `$` character, and that tells the library to listen for DOM events and fire them as jQuery events.
+
+```js dom_to_jquery_controller.js
+import { Controller } from 'stimulus'
+import { delegate, abnegate } from 'jquery-events-to-dom-events'
+
+const eventHandler = (event, detail) =>
+  console.log('$wedding received as wedding by jQuery', detail)
+
+export default class extends Controller {
+  connect () {
+    this.delegate = delegate('$wedding')
+    window.$(document).on('wedding', eventHandler)
+  }
+  disconnect () {
+    abnegate('$wedding', this.delegate)
+    window.$(document).off('wedding', eventHandler)
+  }
+  trigger () {
+    document.dispatchEvent(
+      new CustomEvent('$wedding', { detail: 666 })
+    )
+  }
+}
+```
+
+While the syntax is quite similar, there is a significant difference in the way events are passed into a jQuery event. The CustomEvent constructor can take an object as an optional second parameter, and the key in that object must be `detail`. Interestingly, the value of `detail` can be just about anything - such as *666* above - but most frequently, it's an object with key/value pairs in it.
 
 ## Contributing
 

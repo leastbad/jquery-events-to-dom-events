@@ -1,6 +1,6 @@
 {
   "name": "jquery-events-to-dom-events",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Capture jQuery 'events' with DOM event listeners",
   "keywords": [
     "javascript",
@@ -19,27 +19,16 @@
   "scripts": {
     "prettier-standard:check": "yarn run prettier-standard --check *.js **/*.js",
     "prettier-standard:format": "yarn run prettier-standard *.js **/*.js",
-    "build": "rollup -c",
-    "dev": "rollup -wc",
-    "release": "np"
+    "build": "microbundle",
+    "dev": "microbundle watch"
   },
   "homepage": "https://leastbad.com/",
   "bugs": {
     "url": "https://github.com/leastbad/jquery-events-to-dom-events/issues"
   },
   "devDependencies": {
-    "@babel/core": "^7.6.2",
-    "@babel/plugin-proposal-class-properties": "^7.3.4",
-    "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
-    "@babel/plugin-transform-classes": "^7.3.4",
-    "@babel/plugin-transform-spread": "^7.2.2",
-    "@babel/preset-env": "^7.6.2",
-    "np": "^5.1.3",
-    "prettier-standard": "^16.1.0",
-    "rollup": "^1.20.3",
-    "rollup-plugin-babel": "^4.3.2",
-    "rollup-plugin-filesize": "^6.0.1",
-    "rollup-plugin-node-resolve": "^5.2.0"
+    "microbundle": "^0.12.0",
+    "prettier-standard": "^16.3.0"
   },
   "repository": {
     "type": "git",
