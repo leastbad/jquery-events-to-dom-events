@@ -164,7 +164,7 @@ To capture DOM events inside of your jQuery code, you essentially want to invert
 
 ```js dom_to_jquery_controller.js
 import { delegate } from 'jquery-events-to-dom-events'
-const eventHandler = (event, detail) => console.log('$wedding received as wedding by jQuery', detail)
+const eventHandler = (_, detail) => console.log('$wedding received as wedding by jQuery', detail)
 this.delegate = delegate('$wedding')
 document.dispatchEvent(new CustomEvent('$wedding', { detail: 666 }))
 ```
